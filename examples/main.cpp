@@ -10,6 +10,9 @@
 #endif
 #include "compression/core/zip/zipper.h"
 #include "compression/core/zip/unzipper.h"
+#include "compression/core/7z/szcompressor.h"
+#include "compression/core/7z/szdecompressor.h"
+#include "compression/utils/lzma_utils.h"
 
 bool createDirectory(const std::string& path) {
 #ifdef _WIN32
@@ -100,8 +103,8 @@ void createTestFiles(const std::string& testDir) {
     std::cout << "  Created: binary.bin (1KB)" << std::endl;
 }
 
-void testCompression(const std::string& testDir, const std::string& zipPath) {
-    std::cout << "\n=== Testing Compression ===" << std::endl;
+void testZipCompression(const std::string& testDir, const std::string& zipPath) {
+    std::cout << "\n=== Testing ZIP Compression ===" << std::endl;
     std::cout << "Compressing directory: " << testDir << std::endl;
     std::cout << "To zip file: " << zipPath << std::endl;
 
@@ -115,15 +118,15 @@ void testCompression(const std::string& testDir, const std::string& zipPath) {
 
         zipper.close();
 
-        std::cout << "Compression completed successfully!" << std::endl;
+        std::cout << "ZIP compression completed successfully!" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Compression failed: " << e.what() << std::endl;
+        std::cerr << "ZIP compression failed: " << e.what() << std::endl;
         throw;
     }
 }
 
-void testListing(const std::string& zipPath) {
-    std::cout << "\n=== Testing Entry Listing ===" << std::endl;
+void testZipListing(const std::string& zipPath) {
+    std::cout << "\n=== Testing ZIP Entry Listing ===" << std::endl;
     std::cout << "Reading zip file: " << zipPath << std::endl;
 
     Compression::Core::Zip::Unzipper unzipper;
@@ -145,15 +148,15 @@ void testListing(const std::string& zipPath) {
         }
 
         unzipper.close();
-        std::cout << "\nListing completed successfully!" << std::endl;
+        std::cout << "\nZIP listing completed successfully!" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Listing failed: " << e.what() << std::endl;
+        std::cerr << "ZIP listing failed: " << e.what() << std::endl;
         throw;
     }
 }
 
-void testDecompression(const std::string& zipPath, const std::string& outputDir) {
-    std::cout << "\n=== Testing Decompression ===" << std::endl;
+void testZipDecompression(const std::string& zipPath, const std::string& outputDir) {
+    std::cout << "\n=== Testing ZIP Decompression ===" << std::endl;
     std::cout << "Extracting zip file: " << zipPath << std::endl;
     std::cout << "To directory: " << outputDir << std::endl;
 
@@ -164,44 +167,116 @@ void testDecompression(const std::string& zipPath, const std::string& outputDir)
         unzipper.extractTo(outputDir);
         unzipper.close();
 
-        std::cout << "Decompression completed successfully!" << std::endl;
+        std::cout << "ZIP decompression completed successfully!" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Decompression failed: " << e.what() << std::endl;
+        std::cerr << "ZIP decompression failed: " << e.what() << std::endl;
         throw;
     }
 }
 
-void testSingleFileOperations(const std::string& testDir, const std::string& zipPath) {
-    std::cout << "\n=== Testing Single File Operations ===" << std::endl;
+void test7zCompression(const std::string& testDir, const std::string& szPath) {
+    std::cout << "\n=== Testing 7z Compression ===" << std::endl;
+    std::cout << "Compressing directory: " << testDir << std::endl;
+    std::cout << "To 7z file: " << szPath << std::endl;
 
-    Compression::Core::Zip::Zipper zipper;
+    Compression::Core::SevenZip::SzCompressor compressor;
+
     try {
-        zipper.open(zipPath);
+        compressor.open(szPath);
+
+        std::cout << "LZMA available: " << (Compression::Utils::LZMAUtils::isLzmaAvailable() ? "Yes" : "No") << std::endl;
+        std::cout << "Adding files..." << std::endl;
+        compressor.addDirectory(testDir);
+
+        compressor.close();
+
+        std::cout << "7z compression completed successfully!" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "7z compression failed: " << e.what() << std::endl;
+        throw;
+    }
+}
+
+void test7zListing(const std::string& szPath) {
+    std::cout << "\n=== Testing 7z Entry Listing ===" << std::endl;
+    std::cout << "Reading 7z file: " << szPath << std::endl;
+
+    Compression::Core::SevenZip::SzDecompressor decompressor;
+
+    try {
+        decompressor.open(szPath);
+
+        std::vector<std::string> entries = decompressor.listEntries();
+        std::cout << "\nEntries in 7z file (" << entries.size() << " files):" << std::endl;
+        for (const auto& entry : entries) {
+            Compression::Core::SevenZip::SevenZipEntry info = decompressor.getEntryInfo(entry);
+            std::cout << "  - " << entry << std::endl;
+            std::cout << "    Packed size: " << info.packedSize << " bytes" << std::endl;
+            std::cout << "    Uncompressed size: " << info.size << " bytes" << std::endl;
+            if (info.packedSize < info.size && info.size > 0) {
+                double ratio = (1.0 - static_cast<double>(info.packedSize) / info.size) * 100.0;
+                std::cout << "    Compression ratio: " << ratio << "%" << std::endl;
+            }
+        }
+
+        decompressor.close();
+        std::cout << "\n7z listing completed successfully!" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "7z listing failed: " << e.what() << std::endl;
+        throw;
+    }
+}
+
+void test7zDecompression(const std::string& szPath, const std::string& outputDir) {
+    std::cout << "\n=== Testing 7z Decompression ===" << std::endl;
+    std::cout << "Extracting 7z file: " << szPath << std::endl;
+    std::cout << "To directory: " << outputDir << std::endl;
+
+    Compression::Core::SevenZip::SzDecompressor decompressor;
+
+    try {
+        decompressor.open(szPath);
+        decompressor.extractTo(outputDir);
+        decompressor.close();
+
+        std::cout << "7z decompression completed successfully!" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "7z decompression failed: " << e.what() << std::endl;
+        throw;
+    }
+}
+
+void test7zSingleFileOperations(const std::string& testDir, const std::string& szPath) {
+    std::cout << "\n=== Testing 7z Single File Operations ===" << std::endl;
+
+    Compression::Core::SevenZip::SzCompressor compressor;
+    try {
+        compressor.open(szPath);
 
         std::cout << "Adding single file: file1.txt" << std::endl;
-        zipper.addFile(testDir + "/file1.txt", "single_file.txt");
+        compressor.addFile(testDir + "/file1.txt", "single_file.txt");
 
         std::cout << "Adding another file with custom name: renamed_bin.bin" << std::endl;
-        zipper.addFile(testDir + "/binary.bin", "data/renamed_bin.bin");
+        compressor.addFile(testDir + "/binary.bin", "data/renamed_bin.bin");
 
-        zipper.close();
-        std::cout << "Single file compression completed!" << std::endl;
+        compressor.close();
+        std::cout << "7z single file compression completed!" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Single file compression failed: " << e.what() << std::endl;
+        std::cerr << "7z single file compression failed: " << e.what() << std::endl;
         throw;
     }
 
-    std::cout << "\nListing entries in single file zip:" << std::endl;
-    Compression::Core::Zip::Unzipper unzipper;
+    std::cout << "\nListing entries in single file 7z:" << std::endl;
+    Compression::Core::SevenZip::SzDecompressor decompressor;
     try {
-        unzipper.open(zipPath);
-        std::vector<std::string> entries = unzipper.listEntries();
+        decompressor.open(szPath);
+        std::vector<std::string> entries = decompressor.listEntries();
         for (const auto& entry : entries) {
             std::cout << "  - " << entry << std::endl;
         }
-        unzipper.close();
+        decompressor.close();
     } catch (const std::exception& e) {
-        std::cerr << "Listing failed: " << e.what() << std::endl;
+        std::cerr << "7z listing failed: " << e.what() << std::endl;
         throw;
     }
 }
@@ -211,26 +286,43 @@ int main() {
     std::cout << "    Compression Library Test Suite     " << std::endl;
     std::cout << "========================================" << std::endl;
 
+    std::cout << "\n=== Library Capabilities ===" << std::endl;
+    std::cout << "ZLIB available: " << (Compression::Utils::ZlibUtils::isZlibAvailable() ? "Yes" : "No") << std::endl;
+    std::cout << "LZMA available: " << (Compression::Utils::LZMAUtils::isLzmaAvailable() ? "Yes" : "No") << std::endl;
+
     std::string testDir = "./test_files";
     std::string zipPath = "./test_output.zip";
     std::string singleZipPath = "./single_file_test.zip";
-    std::string outputDir = "./extracted_files";
+    std::string zipOutputDir = "./extracted_files_zip";
+    
+    std::string szPath = "./test_output.7z";
+    std::string singleSzPath = "./single_file_test.7z";
+    std::string szOutputDir = "./extracted_files_7z";
 
     try {
         createTestFiles(testDir);
-        testCompression(testDir, zipPath);
-        testListing(zipPath);
-        testDecompression(zipPath, outputDir);
-        testSingleFileOperations(testDir, singleZipPath);
+
+        testZipCompression(testDir, zipPath);
+        testZipListing(zipPath);
+        testZipDecompression(zipPath, zipOutputDir);
+
+        test7zCompression(testDir, szPath);
+        test7zListing(szPath);
+        test7zDecompression(szPath, szOutputDir);
+
+        test7zSingleFileOperations(testDir, singleSzPath);
 
         std::cout << "\n========================================" << std::endl;
         std::cout << "      All tests completed successfully!   " << std::endl;
         std::cout << "========================================" << std::endl;
         std::cout << "\nGenerated files:" << std::endl;
-        std::cout << "  - " << zipPath << std::endl;
-        std::cout << "  - " << singleZipPath << std::endl;
-        std::cout << "  - " << outputDir << "/" << std::endl;
-        std::cout << "  - " << testDir << "/" << std::endl;
+        std::cout << "  ZIP: " << zipPath << std::endl;
+        std::cout << "  7z:  " << szPath << std::endl;
+        std::cout << "  Single ZIP: " << singleZipPath << std::endl;
+        std::cout << "  Single 7z:  " << singleSzPath << std::endl;
+        std::cout << "  Extracted ZIP: " << zipOutputDir << "/" << std::endl;
+        std::cout << "  Extracted 7z:  " << szOutputDir << "/" << std::endl;
+        std::cout << "  Test files: " << testDir << "/" << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << "\nTest failed with exception: " << e.what() << std::endl;
