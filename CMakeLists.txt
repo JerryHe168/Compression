@@ -10,7 +10,15 @@ endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB QUIET)
+
+if(ZLIB_FOUND)
+    message(STATUS "Found ZLIB: ${ZLIB_LIBRARIES}")
+    add_definitions(-DHAVE_ZLIB)
+else()
+    message(STATUS "ZLIB not found. Using storage-only mode (no compression).")
+    message(STATUS "Install ZLIB to enable DEFLATE compression.")
+endif()
 
 add_library(compression STATIC
     src/zipper.cpp
@@ -18,7 +26,9 @@ add_library(compression STATIC
     src/zlib_utils.cpp
 )
 
-target_link_libraries(compression ZLIB::ZLIB)
+if(ZLIB_FOUND)
+    target_link_libraries(compression ZLIB::ZLIB)
+endif()
 
 add_executable(example examples/main.cpp)
 target_link_libraries(example compression)

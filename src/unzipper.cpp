@@ -234,7 +234,10 @@ bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint1
         throw std::runtime_error("Zip file is too small");
     }
 
-    std::streampos searchStart = std::max(std::streampos(0), fileSize - static_cast<std::streampos>(65536 + minSize));
+    std::streampos searchStart = fileSize - static_cast<std::streampos>(65536 + minSize);
+    if (searchStart < static_cast<std::streampos>(0)) {
+        searchStart = static_cast<std::streampos>(0);
+    }
     size_t searchSize = static_cast<size_t>(fileSize - searchStart);
 
     zipFile.seekg(searchStart, std::ios::beg);
