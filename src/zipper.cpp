@@ -77,7 +77,7 @@ bool Zipper::addFile(const std::string& filePath, const std::string& entryName)
 
     uint32_t localHeaderOffset;
     if (!writeLocalFileHeader(actualEntryName, uncompressedSize, compressedSize,
-                              crc32, localHeaderOffset)) {
+                              crc32, compressionMethod, localHeaderOffset)) {
         return false;
     }
 
@@ -87,7 +87,7 @@ bool Zipper::addFile(const std::string& filePath, const std::string& entryName)
     }
 
     if (!writeCentralDirectoryHeader(actualEntryName, uncompressedSize, compressedSize,
-                                     crc32, localHeaderOffset)) {
+                                     crc32, compressionMethod, localHeaderOffset)) {
         return false;
     }
 
@@ -145,14 +145,13 @@ bool Zipper::close()
 
 bool Zipper::writeLocalFileHeader(const std::string& entryName, uint32_t uncompressedSize,
                                    uint32_t compressedSize, uint32_t crc32,
-                                   uint32_t& localHeaderOffset)
+                                   uint16_t compressionMethod, uint32_t& localHeaderOffset)
 {
     localHeaderOffset = static_cast<uint32_t>(zipFile.tellp());
 
-    const uint16_t localFileHeaderSignature = 0x04034b50;
+    const uint32_t localFileHeaderSignature = 0x04034b50;
     const uint16_t versionNeeded = 20;
     const uint16_t generalPurposeBitFlag = 0;
-    const uint16_t compressionMethod = (compressedSize == uncompressedSize) ? 0 : 8;
     const uint16_t lastModTime = 0;
     const uint16_t lastModDate = 0;
     const uint16_t extraFieldLength = 0;
@@ -180,13 +179,12 @@ bool Zipper::writeLocalFileHeader(const std::string& entryName, uint32_t uncompr
 
 bool Zipper::writeCentralDirectoryHeader(const std::string& entryName, uint32_t uncompressedSize,
                                           uint32_t compressedSize, uint32_t crc32,
-                                          uint32_t localHeaderOffset)
+                                          uint16_t compressionMethod, uint32_t localHeaderOffset)
 {
     const uint32_t centralFileHeaderSignature = 0x02014b50;
     const uint16_t versionMadeBy = 20;
     const uint16_t versionNeeded = 20;
     const uint16_t generalPurposeBitFlag = 0;
-    const uint16_t compressionMethod = (compressedSize == uncompressedSize) ? 0 : 8;
     const uint16_t lastModTime = 0;
     const uint16_t lastModDate = 0;
     const uint16_t extraFieldLength = 0;
