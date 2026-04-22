@@ -26,7 +26,7 @@ bool Unzipper::isSafeEntryName(const std::string& entryName)
         pos++;
     }
 
-    if (entryName.find("\\\\") != std::string::npos) {
+    if (entryName.find('\\') != std::string::npos) {
         return false;
     }
 
@@ -364,10 +364,7 @@ bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint1
         throw std::runtime_error("Cannot find end of central directory record");
     }
 
-    zipFile.seekg(static_cast<std::streamoff>(offset + 8), std::ios::beg);
-
-    uint16_t entriesOnThisDisk;
-    zipFile.read(reinterpret_cast<char*>(&entriesOnThisDisk), sizeof(entriesOnThisDisk));
+    zipFile.seekg(static_cast<std::streamoff>(offset + 10), std::ios::beg);
 
     zipFile.read(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
 
