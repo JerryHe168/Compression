@@ -14,6 +14,8 @@ public:
     static uint32_t calculateCRC32(const std::vector<uint8_t>& data);
     static uint32_t calculateCRC32(uint32_t crc, const std::vector<uint8_t>& data);
     static uint32_t getInitialCRC();
+    
+    static bool isZlibAvailable();
 };
 
 } // namespace Compression

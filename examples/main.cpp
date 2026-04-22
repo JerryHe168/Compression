@@ -2,16 +2,79 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#include <string>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#endif
 #include "zipper.h"
 #include "unzipper.h"
 
-namespace fs = std::filesystem;
+bool createDirectory(const std::string& path) {
+#ifdef _WIN32
+    DWORD attrs = GetFileAttributesA(path.c_str());
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+        return true;
+    }
+
+    size_t pos = 0;
+    do {
+        pos = path.find_first_of("/\\", pos + 1);
+        std::string subPath;
+        if (pos == std::string::npos) {
+            subPath = path;
+        } else {
+            subPath = path.substr(0, pos);
+        }
+
+        if (!subPath.empty()) {
+            attrs = GetFileAttributesA(subPath.c_str());
+            if (attrs == INVALID_FILE_ATTRIBUTES) {
+                if (!CreateDirectoryA(subPath.c_str(), nullptr)) {
+                    if (GetLastError() != ERROR_ALREADY_EXISTS) {
+                        return false;
+                    }
+                }
+            }
+        }
+    } while (pos != std::string::npos);
+
+    return true;
+#else
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+        return true;
+    }
+
+    size_t pos = 0;
+    do {
+        pos = path.find_first_of("/", pos + 1);
+        std::string subPath;
+        if (pos == std::string::npos) {
+            subPath = path;
+        } else {
+            subPath = path.substr(0, pos);
+        }
+
+        if (!subPath.empty()) {
+            if (stat(subPath.c_str(), &st) != 0) {
+                if (mkdir(subPath.c_str(), 0755) != 0) {
+                    return false;
+                }
+            }
+        }
+    } while (pos != std::string::npos);
+
+    return true;
+#endif
+}
 
 void createTestFiles(const std::string& testDir) {
     std::cout << "Creating test files in: " << testDir << std::endl;
 
-    fs::create_directories(testDir);
-    fs::create_directories(testDir + "/subdir");
+    createDirectory(testDir);
+    createDirectory(testDir + "/subdir");
 
     std::ofstream file1(testDir + "/file1.txt");
     file1 << "Hello, this is a test file for compression.\n";
