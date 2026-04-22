@@ -47,9 +47,6 @@ private:
 
     bool readCentralDirectory();
     bool readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint16_t& entryCount);
-    bool decompressData(const std::vector<uint8_t>& compressedData,
-                        std::vector<uint8_t>& decompressedData,
-                        uint32_t uncompressedSize);
     bool readLocalFileHeader(uint32_t localHeaderOffset,
                             uint32_t& dataOffset,
                             uint32_t& compressedSize,

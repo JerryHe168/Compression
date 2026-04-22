@@ -38,15 +38,10 @@ private:
     bool writeLocalFileHeader(const std::string& entryName, uint32_t uncompressedSize,
                             uint32_t compressedSize, uint32_t crc32,
                             uint16_t compressionMethod, uint32_t& localHeaderOffset);
-    bool writeDataDescriptor(uint32_t crc32, uint32_t compressedSize,
-                            uint32_t uncompressedSize);
     bool writeCentralDirectoryHeader(const std::string& entryName, uint32_t uncompressedSize,
                                     uint32_t compressedSize, uint32_t crc32,
                                     uint16_t compressionMethod, uint32_t localHeaderOffset);
     bool writeEndOfCentralDirectory();
-    bool compressFile(const std::string& filePath, std::vector<uint8_t>& compressedData,
-                      uint32_t& uncompressedSize, uint32_t& crc32);
-    uint32_t calculateCRC32(const std::vector<uint8_t>& data);
     std::string getRelativePath(const std::string& basePath, const std::string& fullPath);
     bool isDirectory(const std::string& path);
     void listFilesInDirectory(const std::string& dirPath, std::vector<std::string>& files);
