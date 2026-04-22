@@ -1,0 +1,73 @@
+/* config.h for compiling liblzma with MSVC */
+
+#define TUKLIB_SYMBOL_PREFIX lzma_
+
+#define ASSUME_RAM 128
+
+#define HAVE_CHECK_CRC32 1
+#define HAVE_CHECK_CRC64 1
+#define HAVE_CHECK_SHA256 1
+
+#define HAVE_DECODERS 1
+#define HAVE_DECODER_ARM 1
+#define HAVE_DECODER_ARM64 1
+#define HAVE_DECODER_ARMTHUMB 1
+#define HAVE_DECODER_DELTA 1
+#define HAVE_DECODER_IA64 1
+#define HAVE_DECODER_LZMA1 1
+#define HAVE_DECODER_LZMA2 1
+#define HAVE_DECODER_POWERPC 1
+#define HAVE_DECODER_SPARC 1
+#define HAVE_DECODER_X86 1
+
+#define HAVE_ENCODERS 1
+#define HAVE_ENCODER_ARM 1
+#define HAVE_ENCODER_ARM64 1
+#define HAVE_ENCODER_ARMTHUMB 1
+#define HAVE_ENCODER_DELTA 1
+#define HAVE_ENCODER_IA64 1
+#define HAVE_ENCODER_LZMA1 1
+#define HAVE_ENCODER_LZMA2 1
+#define HAVE_ENCODER_POWERPC 1
+#define HAVE_ENCODER_SPARC 1
+#define HAVE_ENCODER_X86 1
+
+#define HAVE_INTTYPES_H 1
+#define HAVE_LIMITS_H 1
+
+#define HAVE_LZIP_DECODER 1
+
+#define HAVE_MF_BT2 1
+#define HAVE_MF_BT3 1
+#define HAVE_MF_BT4 1
+#define HAVE_MF_HC3 1
+#define HAVE_MF_HC4 1
+
+#define HAVE_STDBOOL_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRING_H 1
+
+#define HAVE_VISIBILITY 0
+#define HAVE__BOOL 1
+
+#ifdef _M_IX86
+#define MYTHREAD_WIN95 1
+#else
+#define MYTHREAD_VISTA 1
+#endif
+
+#define PACKAGE_NAME "XZ Utils"
+#define PACKAGE_URL "https://tukaani.org/xz/"
+
+#ifdef _WIN64
+#define SIZEOF_SIZE_T 8
+#else
+#define SIZEOF_SIZE_T 4
+#endif
+
+#define TUKLIB_FAST_UNALIGNED_ACCESS 1
+
+#define HAVE_ICONV 1
+#define HAVE_MEMORY_H 1
+#define HAVE_UNISTD_H 1
