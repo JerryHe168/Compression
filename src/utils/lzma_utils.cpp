@@ -267,16 +267,18 @@ bool LZMAUtils::compressWithProps(const std::vector<uint8_t>& input,
     lzma_stream strm = LZMA_STREAM_INIT;
     lzma_options_lzma opt_lzma;
 
-    opt_lzma.dict_size = config.dictSize;
-    opt_lzma.lc = config.lc;
-    opt_lzma.lp = config.lp;
-    opt_lzma.pb = config.pb;
-    opt_lzma.fb = config.fb;
-    opt_lzma.algo = config.algo;
-    opt_lzma.bt_mode = 1;
-    opt_lzma.num_fast_bytes = config.fb;
-    opt_lzma.match_finder = LZMA_MF_HC4;
-    opt_lzma.mc = 32;
+    if (lzma_lzma_preset(&opt_lzma, LZMA_PRESET_DEFAULT)) {
+        return false;
+    }
+
+    opt_lzma.dict_size = static_cast<uint32_t>(config.dictSize);
+    opt_lzma.lc = static_cast<uint32_t>(config.lc);
+    opt_lzma.lp = static_cast<uint32_t>(config.lp);
+    opt_lzma.pb = static_cast<uint32_t>(config.pb);
+    opt_lzma.nice_len = static_cast<uint32_t>(config.fb);
+    opt_lzma.mode = config.algo == 1 ? LZMA_MODE_NORMAL : LZMA_MODE_FAST;
+    opt_lzma.mf = LZMA_MF_HC4;
+    opt_lzma.depth = 32;
 
     lzma_filter filters[2];
     filters[0].id = LZMA_FILTER_LZMA1;
@@ -307,7 +309,7 @@ bool LZMAUtils::compressWithProps(const std::vector<uint8_t>& input,
     props.resize(5);
     props[0] = static_cast<uint8_t>((config.pb * 5 + config.lp) * 9 + config.lc);
     
-    uint32_t dictSize = config.dictSize;
+    uint32_t dictSize = static_cast<uint32_t>(config.dictSize);
     props[1] = static_cast<uint8_t>(dictSize & 0xFF);
     props[2] = static_cast<uint8_t>((dictSize >> 8) & 0xFF);
     props[3] = static_cast<uint8_t>((dictSize >> 16) & 0xFF);

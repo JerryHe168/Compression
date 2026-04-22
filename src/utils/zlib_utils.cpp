@@ -3,6 +3,10 @@
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
+
+#undef compress
+#undef uncompress
+
 #endif
 
 namespace Compression {
