@@ -8,7 +8,6 @@ namespace SevenZip {
 
 SzCompressor::SzCompressor()
     : compressionLevel(6)
-    , headerOffset(0)
 {
 }
 

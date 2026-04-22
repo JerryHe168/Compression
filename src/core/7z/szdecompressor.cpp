@@ -389,8 +389,9 @@ bool SzDecompressor::decompressEntry(const SevenZipEntry& entry, std::vector<uin
         throw std::runtime_error("Cannot seek to entry data in 7z file");
     }
 
-    std::vector<uint8_t> compressedData(entry.packedSize > 0 ? entry.packedSize : entry.size);
-    szFile.read(reinterpret_cast<char*>(compressedData.data()), compressedData.size());
+    size_t dataSize = static_cast<size_t>(entry.packedSize > 0 ? entry.packedSize : entry.size);
+    std::vector<uint8_t> compressedData(dataSize);
+    szFile.read(reinterpret_cast<char*>(compressedData.data()), static_cast<std::streamsize>(compressedData.size()));
     if (!szFile.good()) {
         throw std::runtime_error("Cannot read compressed data from 7z file");
     }
@@ -400,11 +401,12 @@ bool SzDecompressor::decompressEntry(const SevenZipEntry& entry, std::vector<uin
         return true;
     }
 
+    size_t expectedSize = static_cast<size_t>(entry.size);
     if (!entry.lzmaProps.empty()) {
-        return Utils::LZMAUtils::decompressWithProps(compressedData, entry.lzmaProps, output, entry.size);
+        return Utils::LZMAUtils::decompressWithProps(compressedData, entry.lzmaProps, output, expectedSize);
     }
 
-    return Utils::LZMAUtils::decompress(compressedData, output, entry.size);
+    return Utils::LZMAUtils::decompress(compressedData, output, expectedSize);
 }
 
 bool SzDecompressor::createDirectory(const std::string& path)
