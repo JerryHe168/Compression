@@ -182,7 +182,9 @@ bool SzDecompressor::readHeader()
     std::vector<std::string> names;
     std::vector<uint64_t> sizes;
     std::vector<uint64_t> crcs;
-    std::vector<uint64_t> packedSizes;
+    std::vector<uint64_t> packSizes;
+    std::vector<uint8_t> lzmaProps;
+    uint8_t compressionMethod = SevenZipMethods::METHOD_LZMA;
 
     while (true) {
         uint8_t id = readID();
@@ -226,20 +228,59 @@ bool SzDecompressor::readHeader()
             case SevenZipIDs::ID_PACK_INFO: {
                 uint64_t numPackStreams = readVarInt();
                 for (uint64_t i = 0; i < numPackStreams; ++i) {
-                    uint64_t packSize = readVarInt();
-                    if (packSize > SevenZipLimits::MAX_COMPRESSED_SIZE) {
-                        throw std::runtime_error("Compressed size exceeds maximum allowed in 7z file");
+                    readVarInt();
+                }
+                break;
+            }
+            case SevenZipIDs::ID_UNPACK_INFO: {
+                while (true) {
+                    uint8_t subId = readID();
+                    if (subId == SevenZipIDs::ID_END) {
+                        break;
                     }
-                    packedSizes.push_back(packSize);
+                    if (subId == SevenZipIDs::ID_FOLDER) {
+                        uint64_t numFolders = readVarInt();
+                        for (uint64_t f = 0; f < numFolders; ++f) {
+                            uint64_t numCoders = readVarInt();
+                            for (uint64_t c = 0; c < numCoders; ++c) {
+                                uint8_t method;
+                                szFile.read(reinterpret_cast<char*>(&method), 1);
+                                compressionMethod = method;
+                                
+                                uint64_t propsSize = readVarInt();
+                                if (propsSize > 0) {
+                                    lzmaProps.resize(static_cast<size_t>(propsSize));
+                                    szFile.read(reinterpret_cast<char*>(lzmaProps.data()), static_cast<std::streamsize>(propsSize));
+                                }
+                            }
+                        }
+                    } else if (subId == SevenZipIDs::ID_CODERS_UNPACK_SIZE) {
+                        readVarInt();
+                    } else if (subId == SevenZipIDs::ID_SUBSTREAMS_INFO) {
+                        uint64_t numSubStreams = readVarInt();
+                        std::vector<uint64_t> unpackSizes;
+                        for (uint64_t i = 0; i < numSubStreams; ++i) {
+                            unpackSizes.push_back(readVarInt());
+                        }
+                        for (uint64_t i = 0; i < numSubStreams; ++i) {
+                            uint64_t packSize = readVarInt();
+                            packSizes.push_back(packSize);
+                        }
+                    } else {
+                        continue;
+                    }
                 }
                 break;
             }
             case SevenZipIDs::ID_SUBSTREAMS_INFO: {
                 uint64_t numSubStreams = readVarInt();
                 for (uint64_t i = 0; i < numSubStreams; ++i) {
-                    uint64_t unpackSize = readVarInt();
-                    if (unpackSize > SevenZipLimits::MAX_UNCOMPRESSED_SIZE) {
-                        throw std::runtime_error("Uncompressed size exceeds maximum allowed in 7z file");
+                    readVarInt();
+                }
+                if (packSizes.empty()) {
+                    for (uint64_t i = 0; i < numSubStreams; ++i) {
+                        uint64_t packSize = readVarInt();
+                        packSizes.push_back(packSize);
                     }
                 }
                 break;
@@ -250,16 +291,20 @@ bool SzDecompressor::readHeader()
         }
     }
 
+    uint64_t currentOffset = dataStartOffset;
     for (size_t i = 0; i < names.size() && i < numFiles; ++i) {
         SevenZipEntry entry;
         entry.name = names[i];
         entry.size = (i < sizes.size()) ? sizes[i] : 0;
-        entry.packedSize = (i < packedSizes.size()) ? packedSizes[i] : entry.size;
+        entry.packedSize = (i < packSizes.size()) ? packSizes[i] : entry.size;
         entry.crc64 = (i < crcs.size()) ? crcs[i] : 0;
         entry.isDirectory = (!entry.name.empty() && entry.name.back() == '/');
-        entry.dataOffset = dataStartOffset;
-        entry.compressionMethod = SevenZipMethods::METHOD_LZMA2;
+        entry.dataOffset = currentOffset;
+        entry.compressionMethod = compressionMethod;
+        entry.lzmaProps = lzmaProps;
         entry.localHeaderOffset = 0;
+
+        currentOffset += entry.packedSize;
 
         if (entry.size > SevenZipLimits::MIN_COMPRESSED_SIZE_FOR_RATIO_CHECK &&
             entry.packedSize > 0) {

@@ -270,14 +270,32 @@ bool SzCompressor::writeStreamsInfoForHeader(std::vector<uint8_t>& output)
     Utils::LZMAUtils::writeVarInt(output, compressedData.size());
 
     uint64_t totalUnpackSize = 0;
+    uint64_t totalPackSize = 0;
     for (const auto& info : fileInfos) {
         totalUnpackSize += info.size;
+        totalPackSize += info.packedSize;
     }
 
     output.push_back(SevenZipIDs::ID_UNPACK_INFO);
     output.push_back(SevenZipIDs::ID_FOLDER);
     Utils::LZMAUtils::writeVarInt(output, 1);
+
     Utils::LZMAUtils::writeVarInt(output, 1);
+
+    uint8_t lzmaMethod = SevenZipMethods::METHOD_LZMA;
+    output.push_back(lzmaMethod);
+
+    if (!fileInfos.empty() && !fileInfos[0].lzmaProps.empty()) {
+        Utils::LZMAUtils::writeVarInt(output, fileInfos[0].lzmaProps.size());
+        output.insert(output.end(), fileInfos[0].lzmaProps.begin(), fileInfos[0].lzmaProps.end());
+    } else {
+        Utils::LZMAUtils::writeVarInt(output, 5);
+        output.push_back(0x5D);
+        output.push_back(0x00);
+        output.push_back(0x00);
+        output.push_back(0x40);
+        output.push_back(0x00);
+    }
 
     output.push_back(SevenZipIDs::ID_CODERS_UNPACK_SIZE);
     Utils::LZMAUtils::writeVarInt(output, totalUnpackSize);
@@ -288,6 +306,12 @@ bool SzCompressor::writeStreamsInfoForHeader(std::vector<uint8_t>& output)
     for (const auto& info : fileInfos) {
         Utils::LZMAUtils::writeVarInt(output, info.size);
     }
+
+    for (const auto& info : fileInfos) {
+        Utils::LZMAUtils::writeVarInt(output, info.packedSize);
+    }
+
+    output.push_back(SevenZipIDs::ID_END);
 
     return true;
 }
