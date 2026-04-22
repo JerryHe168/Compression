@@ -42,6 +42,10 @@ bool Zipper::addFile(const std::string& filePath, const std::string& entryName)
     std::streamsize fileSize = inputFile.tellg();
     inputFile.seekg(0, std::ios::beg);
 
+    if (fileSize > static_cast<std::streamsize>(ZipLimits::MAX_UNCOMPRESSED_SIZE)) {
+        throw std::runtime_error("File size exceeds maximum allowed: " + filePath);
+    }
+
     std::vector<uint8_t> fileData(static_cast<size_t>(fileSize));
     if (!inputFile.read(reinterpret_cast<char*>(fileData.data()), fileSize)) {
         throw std::runtime_error("Cannot read input file: " + filePath);
@@ -58,11 +62,11 @@ bool Zipper::addFile(const std::string& filePath, const std::string& entryName)
     uint16_t compressionMethod;
     if (compressed && compressedData.size() < fileData.size()) {
         compressedSize = static_cast<uint32_t>(compressedData.size());
-        compressionMethod = 8;
+        compressionMethod = ZipMethods::DEFLATED;
     } else {
         compressedData = fileData;
         compressedSize = uncompressedSize;
-        compressionMethod = 0;
+        compressionMethod = ZipMethods::STORED;
     }
 
     std::string actualEntryName = entryName;

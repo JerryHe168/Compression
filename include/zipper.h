@@ -15,6 +15,8 @@
 #include <unistd.h>
 #endif
 
+#include "zip_constants.h"
+
 namespace Compression {
 
 class Zipper {

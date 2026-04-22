@@ -16,6 +16,8 @@
 #include <unistd.h>
 #endif
 
+#include "zip_constants.h"
+
 namespace Compression {
 
 struct ZipEntryInfo {
