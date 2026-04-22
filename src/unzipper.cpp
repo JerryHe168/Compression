@@ -3,6 +3,15 @@
 
 namespace Compression {
 
+std::string Unzipper::joinPath(const std::string& base, const std::string& name)
+{
+#ifdef _WIN32
+    return base + "\\" + name;
+#else
+    return base + "/" + name;
+#endif
+}
+
 Unzipper::Unzipper()
 {
 }
@@ -46,12 +55,12 @@ bool Unzipper::extractTo(const std::string& outputDir)
     for (const auto& pair : entries) {
         const ZipEntryInfo& entry = pair.second;
 
-        std::string outputPath = outputDir + "/" + entry.name;
+        std::string outputPath = joinPath(outputDir, entry.name);
 
         if (entry.isDirectory) {
             createDirectory(outputPath);
         } else {
-            size_t pos = outputPath.find_last_of('/');
+            size_t pos = outputPath.find_last_of("/\\");
             if (pos != std::string::npos) {
                 std::string dirPath = outputPath.substr(0, pos);
                 createDirectory(dirPath);
@@ -109,6 +118,11 @@ bool Unzipper::extractFile(const std::string& entryName, const std::string& outp
 
     if (decompressedData.size() != entry.uncompressedSize) {
         throw std::runtime_error("Decompressed size mismatch for entry: " + entryName);
+    }
+
+    uint32_t calculatedCrc = ZlibUtils::calculateCRC32(decompressedData);
+    if (calculatedCrc != entry.crc32) {
+        throw std::runtime_error("CRC32 mismatch for entry: " + entryName);
     }
 
     if (!writeFile(outputPath, decompressedData)) {

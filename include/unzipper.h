@@ -5,7 +5,6 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
-#include <cstring>
 #include <stdexcept>
 #include <map>
 
@@ -54,6 +53,7 @@ private:
     bool createDirectory(const std::string& path);
     bool writeFile(const std::string& filePath, const std::vector<uint8_t>& data);
     bool entryExists(const std::string& entryName);
+    std::string joinPath(const std::string& base, const std::string& name);
 };
 
 } // namespace Compression

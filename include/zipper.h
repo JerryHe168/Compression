@@ -5,7 +5,6 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
-#include <cstring>
 #include <stdexcept>
 
 #ifdef _WIN32
