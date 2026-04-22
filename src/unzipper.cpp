@@ -1,5 +1,6 @@
 #include "unzipper.h"
 #include "zlib_utils.h"
+#include <cstring>
 
 namespace Compression {
 
@@ -237,7 +238,7 @@ bool Unzipper::readCentralDirectory()
         uint32_t signature;
         zipFile.read(reinterpret_cast<char*>(&signature), sizeof(signature));
 
-        if (signature != 0x02014b50) {
+        if (signature != ZipSignatures::CENTRAL_FILE_HEADER) {
             throw std::runtime_error("Invalid central directory entry signature");
         }
 
@@ -325,8 +326,7 @@ bool Unzipper::readCentralDirectory()
 
 bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint16_t& entryCount)
 {
-    const uint32_t endOfCentralDirSignature = 0x06054b50;
-    const size_t minSize = 22;
+    const size_t minSize = ZipLimits::END_OF_CENTRAL_DIR_MIN_SIZE;
 
     zipFile.seekg(0, std::ios::end);
     std::streampos fileSize = zipFile.tellg();
@@ -335,7 +335,7 @@ bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint1
         throw std::runtime_error("Zip file is too small");
     }
 
-    std::streampos searchStart = fileSize - static_cast<std::streampos>(65536 + minSize);
+    std::streampos searchStart = fileSize - static_cast<std::streampos>(ZipLimits::MAX_COMMENT_SIZE + minSize);
     if (searchStart < static_cast<std::streampos>(0)) {
         searchStart = static_cast<std::streampos>(0);
     }
@@ -345,10 +345,15 @@ bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint1
     std::vector<uint8_t> buffer(searchSize);
     zipFile.read(reinterpret_cast<char*>(buffer.data()), searchSize);
 
+    if (buffer.size() < minSize) {
+        throw std::runtime_error("Zip file is too small");
+    }
+
     int64_t offset = -1;
     for (size_t i = 0; i <= buffer.size() - minSize; ++i) {
-        uint32_t signature = *reinterpret_cast<const uint32_t*>(&buffer[i]);
-        if (signature == endOfCentralDirSignature) {
+        uint32_t signature;
+        std::memcpy(&signature, &buffer[i], sizeof(signature));
+        if (signature == ZipSignatures::END_OF_CENTRAL_DIR) {
             offset = static_cast<int64_t>(searchStart) + static_cast<int64_t>(i);
             break;
         }
@@ -388,7 +393,7 @@ bool Unzipper::readLocalFileHeader(uint32_t localHeaderOffset, uint32_t& dataOff
     uint32_t signature;
     zipFile.read(reinterpret_cast<char*>(&signature), sizeof(signature));
 
-    if (signature != 0x04034b50) {
+    if (signature != ZipSignatures::LOCAL_FILE_HEADER) {
         throw std::runtime_error("Invalid local file header signature");
     }
 

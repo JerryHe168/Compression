@@ -153,25 +153,19 @@ bool Zipper::writeLocalFileHeader(const std::string& entryName, uint32_t uncompr
 {
     localHeaderOffset = static_cast<uint32_t>(zipFile.tellp());
 
-    const uint32_t localFileHeaderSignature = 0x04034b50;
-    const uint16_t versionNeeded = 20;
-    const uint16_t generalPurposeBitFlag = 0;
-    const uint16_t lastModTime = 0;
-    const uint16_t lastModDate = 0;
-    const uint16_t extraFieldLength = 0;
     const uint16_t fileNameLength = static_cast<uint16_t>(entryName.size());
 
-    zipFile.write(reinterpret_cast<const char*>(&localFileHeaderSignature), sizeof(localFileHeaderSignature));
-    zipFile.write(reinterpret_cast<const char*>(&versionNeeded), sizeof(versionNeeded));
-    zipFile.write(reinterpret_cast<const char*>(&generalPurposeBitFlag), sizeof(generalPurposeBitFlag));
+    zipFile.write(reinterpret_cast<const char*>(&ZipSignatures::LOCAL_FILE_HEADER), sizeof(ZipSignatures::LOCAL_FILE_HEADER));
+    zipFile.write(reinterpret_cast<const char*>(&ZipVersions::VERSION_NEEDED), sizeof(ZipVersions::VERSION_NEEDED));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::GENERAL_PURPOSE_BIT_FLAG), sizeof(ZipDefaults::GENERAL_PURPOSE_BIT_FLAG));
     zipFile.write(reinterpret_cast<const char*>(&compressionMethod), sizeof(compressionMethod));
-    zipFile.write(reinterpret_cast<const char*>(&lastModTime), sizeof(lastModTime));
-    zipFile.write(reinterpret_cast<const char*>(&lastModDate), sizeof(lastModDate));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::LAST_MOD_TIME), sizeof(ZipDefaults::LAST_MOD_TIME));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::LAST_MOD_DATE), sizeof(ZipDefaults::LAST_MOD_DATE));
     zipFile.write(reinterpret_cast<const char*>(&crc32), sizeof(crc32));
     zipFile.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
     zipFile.write(reinterpret_cast<const char*>(&uncompressedSize), sizeof(uncompressedSize));
     zipFile.write(reinterpret_cast<const char*>(&fileNameLength), sizeof(fileNameLength));
-    zipFile.write(reinterpret_cast<const char*>(&extraFieldLength), sizeof(extraFieldLength));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::EXTRA_FIELD_LENGTH), sizeof(ZipDefaults::EXTRA_FIELD_LENGTH));
     zipFile.write(entryName.data(), fileNameLength);
 
     if (!zipFile.good()) {
@@ -185,36 +179,25 @@ bool Zipper::writeCentralDirectoryHeader(const std::string& entryName, uint32_t 
                                           uint32_t compressedSize, uint32_t crc32,
                                           uint16_t compressionMethod, uint32_t localHeaderOffset)
 {
-    const uint32_t centralFileHeaderSignature = 0x02014b50;
-    const uint16_t versionMadeBy = 20;
-    const uint16_t versionNeeded = 20;
-    const uint16_t generalPurposeBitFlag = 0;
-    const uint16_t lastModTime = 0;
-    const uint16_t lastModDate = 0;
-    const uint16_t extraFieldLength = 0;
-    const uint16_t fileCommentLength = 0;
-    const uint16_t diskNumberStart = 0;
-    const uint16_t internalFileAttributes = 0;
-    const uint32_t externalFileAttributes = 0;
     const uint16_t fileNameLength = static_cast<uint16_t>(entryName.size());
 
     std::vector<uint8_t> header;
     header.reserve(46 + fileNameLength);
 
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&centralFileHeaderSignature),
-                  reinterpret_cast<const uint8_t*>(&centralFileHeaderSignature) + sizeof(centralFileHeaderSignature));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&versionMadeBy),
-                  reinterpret_cast<const uint8_t*>(&versionMadeBy) + sizeof(versionMadeBy));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&versionNeeded),
-                  reinterpret_cast<const uint8_t*>(&versionNeeded) + sizeof(versionNeeded));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&generalPurposeBitFlag),
-                  reinterpret_cast<const uint8_t*>(&generalPurposeBitFlag) + sizeof(generalPurposeBitFlag));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipSignatures::CENTRAL_FILE_HEADER),
+                  reinterpret_cast<const uint8_t*>(&ZipSignatures::CENTRAL_FILE_HEADER) + sizeof(ZipSignatures::CENTRAL_FILE_HEADER));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipVersions::VERSION_MADE_BY),
+                  reinterpret_cast<const uint8_t*>(&ZipVersions::VERSION_MADE_BY) + sizeof(ZipVersions::VERSION_MADE_BY));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipVersions::VERSION_NEEDED),
+                  reinterpret_cast<const uint8_t*>(&ZipVersions::VERSION_NEEDED) + sizeof(ZipVersions::VERSION_NEEDED));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::GENERAL_PURPOSE_BIT_FLAG),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::GENERAL_PURPOSE_BIT_FLAG) + sizeof(ZipDefaults::GENERAL_PURPOSE_BIT_FLAG));
     header.insert(header.end(), reinterpret_cast<const uint8_t*>(&compressionMethod),
                   reinterpret_cast<const uint8_t*>(&compressionMethod) + sizeof(compressionMethod));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&lastModTime),
-                  reinterpret_cast<const uint8_t*>(&lastModTime) + sizeof(lastModTime));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&lastModDate),
-                  reinterpret_cast<const uint8_t*>(&lastModDate) + sizeof(lastModDate));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::LAST_MOD_TIME),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::LAST_MOD_TIME) + sizeof(ZipDefaults::LAST_MOD_TIME));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::LAST_MOD_DATE),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::LAST_MOD_DATE) + sizeof(ZipDefaults::LAST_MOD_DATE));
     header.insert(header.end(), reinterpret_cast<const uint8_t*>(&crc32),
                   reinterpret_cast<const uint8_t*>(&crc32) + sizeof(crc32));
     header.insert(header.end(), reinterpret_cast<const uint8_t*>(&compressedSize),
@@ -223,16 +206,16 @@ bool Zipper::writeCentralDirectoryHeader(const std::string& entryName, uint32_t 
                   reinterpret_cast<const uint8_t*>(&uncompressedSize) + sizeof(uncompressedSize));
     header.insert(header.end(), reinterpret_cast<const uint8_t*>(&fileNameLength),
                   reinterpret_cast<const uint8_t*>(&fileNameLength) + sizeof(fileNameLength));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&extraFieldLength),
-                  reinterpret_cast<const uint8_t*>(&extraFieldLength) + sizeof(extraFieldLength));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&fileCommentLength),
-                  reinterpret_cast<const uint8_t*>(&fileCommentLength) + sizeof(fileCommentLength));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&diskNumberStart),
-                  reinterpret_cast<const uint8_t*>(&diskNumberStart) + sizeof(diskNumberStart));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&internalFileAttributes),
-                  reinterpret_cast<const uint8_t*>(&internalFileAttributes) + sizeof(internalFileAttributes));
-    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&externalFileAttributes),
-                  reinterpret_cast<const uint8_t*>(&externalFileAttributes) + sizeof(externalFileAttributes));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::EXTRA_FIELD_LENGTH),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::EXTRA_FIELD_LENGTH) + sizeof(ZipDefaults::EXTRA_FIELD_LENGTH));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::FILE_COMMENT_LENGTH),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::FILE_COMMENT_LENGTH) + sizeof(ZipDefaults::FILE_COMMENT_LENGTH));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::DISK_NUMBER_START),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::DISK_NUMBER_START) + sizeof(ZipDefaults::DISK_NUMBER_START));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::INTERNAL_FILE_ATTRIBUTES),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::INTERNAL_FILE_ATTRIBUTES) + sizeof(ZipDefaults::INTERNAL_FILE_ATTRIBUTES));
+    header.insert(header.end(), reinterpret_cast<const uint8_t*>(&ZipDefaults::EXTERNAL_FILE_ATTRIBUTES),
+                  reinterpret_cast<const uint8_t*>(&ZipDefaults::EXTERNAL_FILE_ATTRIBUTES) + sizeof(ZipDefaults::EXTERNAL_FILE_ATTRIBUTES));
     header.insert(header.end(), reinterpret_cast<const uint8_t*>(&localHeaderOffset),
                   reinterpret_cast<const uint8_t*>(&localHeaderOffset) + sizeof(localHeaderOffset));
     header.insert(header.end(), entryName.begin(), entryName.end());
@@ -243,21 +226,17 @@ bool Zipper::writeCentralDirectoryHeader(const std::string& entryName, uint32_t 
 
 bool Zipper::writeEndOfCentralDirectory()
 {
-    const uint32_t endOfCentralDirSignature = 0x06054b50;
-    const uint16_t numberOfThisDisk = 0;
-    const uint16_t diskWithCentralDir = 0;
     const uint16_t entriesOnThisDisk = entryCount;
     const uint16_t totalEntries = entryCount;
-    const uint16_t commentLength = 0;
 
-    zipFile.write(reinterpret_cast<const char*>(&endOfCentralDirSignature), sizeof(endOfCentralDirSignature));
-    zipFile.write(reinterpret_cast<const char*>(&numberOfThisDisk), sizeof(numberOfThisDisk));
-    zipFile.write(reinterpret_cast<const char*>(&diskWithCentralDir), sizeof(diskWithCentralDir));
+    zipFile.write(reinterpret_cast<const char*>(&ZipSignatures::END_OF_CENTRAL_DIR), sizeof(ZipSignatures::END_OF_CENTRAL_DIR));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::NUMBER_OF_THIS_DISK), sizeof(ZipDefaults::NUMBER_OF_THIS_DISK));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::DISK_WITH_CENTRAL_DIR), sizeof(ZipDefaults::DISK_WITH_CENTRAL_DIR));
     zipFile.write(reinterpret_cast<const char*>(&entriesOnThisDisk), sizeof(entriesOnThisDisk));
     zipFile.write(reinterpret_cast<const char*>(&totalEntries), sizeof(totalEntries));
     zipFile.write(reinterpret_cast<const char*>(&centralDirectorySize), sizeof(centralDirectorySize));
     zipFile.write(reinterpret_cast<const char*>(&centralDirectoryOffset), sizeof(centralDirectoryOffset));
-    zipFile.write(reinterpret_cast<const char*>(&commentLength), sizeof(commentLength));
+    zipFile.write(reinterpret_cast<const char*>(&ZipDefaults::FILE_COMMENT_LENGTH), sizeof(ZipDefaults::FILE_COMMENT_LENGTH));
 
     if (!zipFile.good()) {
         throw std::runtime_error("Cannot write end of central directory to zip file");
