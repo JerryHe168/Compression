@@ -91,10 +91,6 @@ bool Unzipper::extractTo(const std::string& outputDir)
     for (const auto& pair : entries) {
         const ZipEntryInfo& entry = pair.second;
 
-        if (!isSafeEntryName(entry.name)) {
-            throw std::runtime_error("Unsafe entry name detected: " + entry.name);
-        }
-
         std::string outputPath = joinPath(outputDir, entry.name);
 
         if (entry.isDirectory) {
@@ -125,24 +121,12 @@ bool Unzipper::extractFile(const std::string& entryName, const std::string& outp
 
     ZipEntryInfo entry = getEntryInfo(entryName);
 
-    if (!isSafeEntryName(entry.name)) {
-        throw std::runtime_error("Unsafe entry name detected: " + entry.name);
-    }
-
-    if (entry.uncompressedSize > ZipLimits::MAX_UNCOMPRESSED_SIZE) {
-        throw std::runtime_error("Uncompressed size exceeds maximum allowed for entry: " + entry.name);
-    }
-
     uint32_t dataOffset;
     uint32_t compressedSize;
     uint16_t compressionMethod;
 
     if (!readLocalFileHeader(entry.localHeaderOffset, dataOffset, compressedSize, compressionMethod)) {
         return false;
-    }
-
-    if (compressedSize > ZipLimits::MAX_COMPRESSED_SIZE) {
-        throw std::runtime_error("Compressed size exceeds maximum allowed for entry: " + entry.name);
     }
 
     zipFile.seekg(dataOffset, std::ios::beg);
@@ -261,15 +245,6 @@ bool Unzipper::readCentralDirectory()
         zipFile.read(reinterpret_cast<char*>(&fileNameLength), sizeof(fileNameLength));
         zipFile.read(reinterpret_cast<char*>(&extraFieldLength), sizeof(extraFieldLength));
         zipFile.read(reinterpret_cast<char*>(&fileCommentLength), sizeof(fileCommentLength));
-
-        if (fileNameLength > ZipLimits::MAX_FILENAME_LENGTH) {
-            throw std::runtime_error("File name length exceeds maximum allowed");
-        }
-
-        if (fileCommentLength > ZipLimits::MAX_COMMENT_SIZE) {
-            throw std::runtime_error("File comment length exceeds maximum allowed");
-        }
-
         zipFile.read(reinterpret_cast<char*>(&diskNumberStart), sizeof(diskNumberStart));
         zipFile.read(reinterpret_cast<char*>(&internalFileAttributes), sizeof(internalFileAttributes));
         zipFile.read(reinterpret_cast<char*>(&externalFileAttributes), sizeof(externalFileAttributes));
@@ -338,10 +313,6 @@ bool Unzipper::readEndOfCentralDirectory(uint32_t& centralDirectoryOffset, uint1
     zipFile.read(reinterpret_cast<char*>(&entriesOnThisDisk), sizeof(entriesOnThisDisk));
 
     zipFile.read(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
-
-    if (entryCount > ZipLimits::MAX_ENTRY_COUNT) {
-        throw std::runtime_error("Entry count exceeds maximum allowed");
-    }
 
     uint32_t centralDirectorySize;
     zipFile.read(reinterpret_cast<char*>(&centralDirectorySize), sizeof(centralDirectorySize));
