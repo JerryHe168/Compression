@@ -414,6 +414,11 @@ bool Unzipper::readLocalFileHeader(uint32_t localHeaderOffset, uint32_t& dataOff
     zipFile.read(reinterpret_cast<char*>(&fileNameLength), sizeof(fileNameLength));
     zipFile.read(reinterpret_cast<char*>(&extraFieldLength), sizeof(extraFieldLength));
 
+    (void)versionNeeded;
+    (void)generalPurposeBitFlag;
+    (void)crc32;
+    (void)uncompressedSize;
+
     zipFile.seekg(fileNameLength + extraFieldLength, std::ios::cur);
 
     dataOffset = static_cast<uint32_t>(zipFile.tellg());
