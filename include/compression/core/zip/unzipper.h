@@ -16,7 +16,7 @@
 #include <unistd.h>
 #endif
 
-#include "compression/core/zip/zip_constants.h"
+#include "compression/core/zip/constants.h"
 #include "compression/utils/zlib_utils.h"
 
 namespace Compression {
