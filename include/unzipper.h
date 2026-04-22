@@ -18,6 +18,14 @@
 
 namespace Compression {
 
+namespace ZipLimits {
+    constexpr uint32_t MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024;
+    constexpr uint32_t MAX_COMPRESSED_SIZE = 100 * 1024 * 1024;
+    constexpr uint16_t MAX_ENTRY_COUNT = 10000;
+    constexpr uint16_t MAX_COMMENT_SIZE = 65535;
+    constexpr uint16_t MAX_FILENAME_LENGTH = 65535;
+}
+
 struct ZipEntryInfo {
     std::string name;
     uint32_t compressedSize;
@@ -53,6 +61,7 @@ private:
     bool createDirectory(const std::string& path);
     bool writeFile(const std::string& filePath, const std::vector<uint8_t>& data);
     bool entryExists(const std::string& entryName);
+    bool isSafeEntryName(const std::string& entryName);
     std::string joinPath(const std::string& base, const std::string& name);
 };
 
