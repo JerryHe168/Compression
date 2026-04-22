@@ -8,8 +8,8 @@
 #else
 #include <sys/stat.h>
 #endif
-#include "zipper.h"
-#include "unzipper.h"
+#include "compression/core/zip/zipper.h"
+#include "compression/core/zip/unzipper.h"
 
 bool createDirectory(const std::string& path) {
 #ifdef _WIN32
@@ -105,7 +105,7 @@ void testCompression(const std::string& testDir, const std::string& zipPath) {
     std::cout << "Compressing directory: " << testDir << std::endl;
     std::cout << "To zip file: " << zipPath << std::endl;
 
-    Compression::Zipper zipper;
+    Compression::Core::Zip::Zipper zipper;
 
     try {
         zipper.open(zipPath);
@@ -126,7 +126,7 @@ void testListing(const std::string& zipPath) {
     std::cout << "\n=== Testing Entry Listing ===" << std::endl;
     std::cout << "Reading zip file: " << zipPath << std::endl;
 
-    Compression::Unzipper unzipper;
+    Compression::Core::Zip::Unzipper unzipper;
 
     try {
         unzipper.open(zipPath);
@@ -134,7 +134,7 @@ void testListing(const std::string& zipPath) {
         std::vector<std::string> entries = unzipper.listEntries();
         std::cout << "\nEntries in zip file (" << entries.size() << " files):" << std::endl;
         for (const auto& entry : entries) {
-            Compression::ZipEntryInfo info = unzipper.getEntryInfo(entry);
+            Compression::Core::Zip::ZipEntryInfo info = unzipper.getEntryInfo(entry);
             std::cout << "  - " << entry << std::endl;
             std::cout << "    Compressed size: " << info.compressedSize << " bytes" << std::endl;
             std::cout << "    Uncompressed size: " << info.uncompressedSize << " bytes" << std::endl;
@@ -157,7 +157,7 @@ void testDecompression(const std::string& zipPath, const std::string& outputDir)
     std::cout << "Extracting zip file: " << zipPath << std::endl;
     std::cout << "To directory: " << outputDir << std::endl;
 
-    Compression::Unzipper unzipper;
+    Compression::Core::Zip::Unzipper unzipper;
 
     try {
         unzipper.open(zipPath);
@@ -174,7 +174,7 @@ void testDecompression(const std::string& zipPath, const std::string& outputDir)
 void testSingleFileOperations(const std::string& testDir, const std::string& zipPath) {
     std::cout << "\n=== Testing Single File Operations ===" << std::endl;
 
-    Compression::Zipper zipper;
+    Compression::Core::Zip::Zipper zipper;
     try {
         zipper.open(zipPath);
 
@@ -192,7 +192,7 @@ void testSingleFileOperations(const std::string& testDir, const std::string& zip
     }
 
     std::cout << "\nListing entries in single file zip:" << std::endl;
-    Compression::Unzipper unzipper;
+    Compression::Core::Zip::Unzipper unzipper;
     try {
         unzipper.open(zipPath);
         std::vector<std::string> entries = unzipper.listEntries();
